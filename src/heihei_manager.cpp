@@ -124,6 +124,7 @@ void HeiheiManager::sendMqttLog(const char* format, va_list arg) {
     const char* payload = strchr(sendBuffer, ')') + 2;
 
     cJSON* j_log = cJSON_CreateObject();
+    cJSON_AddStringToObject(j_log, "device", DEVICE_NAME);
     cJSON_AddStringToObject(j_log, "log", payload);
     cJSON_AddStringToObject(j_log, "level", severity);
 
