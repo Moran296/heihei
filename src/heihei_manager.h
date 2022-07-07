@@ -22,6 +22,8 @@ private:
 
     void initConnectivity();
     void subscribe_to_mqtt();
+    void sendMqttLog(const char* format, va_list arg);
+    static int heihei_print(const char* format, va_list arg);
 
     Wifi m_wifi;
     MqttClient m_mqtt;

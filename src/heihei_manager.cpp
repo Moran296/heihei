@@ -19,6 +19,7 @@ HeiheiManager::HeiheiManager() : m_sender(IR_PIN, 0, 38),
                                  m_ac(m_sender, m_blinker),
                                  m_strip(m_sender, m_blinker) 
 {
+    instance = this;
     m_mqtt.Init();
     m_wifi.Init();
     configASSERT(Mdns::Init());
@@ -51,11 +52,13 @@ void HeiheiManager::initConnectivity() {
 
 void HeiheiManager::Run() {
 
+    esp_log_set_vprintf(heihei_print);
     initConnectivity();
 
     for(;;) {
+        ESPARRAG_LOG_WARNING("heihei manager running....");
         m_ac_led.Set(m_wifi.IsInState<WifiFSM::STATE_Connected>());
-        vTaskDelay(Seconds(60).toTicks());
+        vTaskDelay(Seconds(20).toTicks());
     }
 }
 
@@ -80,7 +83,62 @@ void HeiheiManager::subscribe_to_mqtt() {
     });
 }
 
+bool isEmptyLog(const char* log) {
+    return  log[0] == '\0' ||
+            strncmp(log, "", 1) == 0 ||
+            strncmp(log, "\n", 1) == 0 ||
+            strncmp(log, "\r", 1) == 0;
+}
 
+void HeiheiManager::sendMqttLog(const char* format, va_list arg) {
+    static char sendBuffer[140]{};
+    bool isConnected = 
+            m_wifi.IsInState<WifiFSM::STATE_Connected>() &&
+            m_mqtt.IsInState<MqttFSM::STATE_CONNECTED>();
+
+    if (!isConnected) {
+        return;
+    }
+
+    int len = vsnprintf(sendBuffer, sizeof(sendBuffer), format, arg);
+
+    if (len < 0 || isEmptyLog(sendBuffer)) {
+        return;
+    }
+
+    const char* severity{};
+    switch(format[7]) {
+        case 'E':
+            severity = "error";
+            break;
+        case 'W':
+            severity = "warning";
+            break;
+        case 'I':
+            severity = "info";
+            break;
+        default:
+            return;
+    }
+
+    const char* payload = strchr(sendBuffer, ')') + 2;
+
+    cJSON* j_log = cJSON_CreateObject();
+    cJSON_AddStringToObject(j_log, "log", payload);
+    cJSON_AddStringToObject(j_log, "level", severity);
+
+    m_mqtt.Publish("/log", j_log);
+
+    cJSON_Delete(j_log); 
+}
+
+int HeiheiManager::heihei_print(const char* format, va_list arg) {
+    int len = vprintf(format, arg);
+
+    HeiheiManager& self = GetInstance();
+    self.sendMqttLog(format, arg);
+    return len;
+}
 
 
 
