@@ -5,6 +5,7 @@
 #include "esparrag_mqtt.h"
 #include "ac_manager.h"
 #include "IR_led_strip.h"
+#include "esparrag_fota.h"
 
 class HeiheiManager 
 {
@@ -29,6 +30,8 @@ private:
     Blinker m_blinker;
     ACManager m_ac;
     IRLedStrip m_strip;
+    DirectOta m_ota;
+
 };
 
 

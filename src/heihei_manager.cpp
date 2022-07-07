@@ -46,6 +46,7 @@ void HeiheiManager::initConnectivity() {
     }
 
     subscribe_to_mqtt();
+    m_ota.Init();
 }
 
 void HeiheiManager::Run() {
