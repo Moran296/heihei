@@ -92,6 +92,7 @@ bool isEmptyLog(const char* log) {
 
 void HeiheiManager::sendMqttLog(const char* format, va_list arg) {
     static char sendBuffer[140]{};
+
     bool isConnected = 
             m_wifi.IsInState<WifiFSM::STATE_Connected>() &&
             m_mqtt.IsInState<MqttFSM::STATE_CONNECTED>();
@@ -129,8 +130,6 @@ void HeiheiManager::sendMqttLog(const char* format, va_list arg) {
     cJSON_AddStringToObject(j_log, "level", severity);
 
     m_mqtt.Publish("/log", j_log);
-
-    cJSON_Delete(j_log); 
 }
 
 int HeiheiManager::heihei_print(const char* format, va_list arg) {
